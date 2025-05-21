@@ -31,7 +31,7 @@ description:
     __Currently in heavy WIP__
     
     A wrapper around BLAS/LAPACK with the goal to provide everyone with the level of abstraction
-    the want. It provides the following layers of abstraction from lowest level to highest level,
+    they want. It provides the following layers of abstraction from lowest level to highest level,
     each of which wraps the previous layer:
 
     ["BLAS.Direct"]: The directly imported CBLAS/LAPACKE symbols, no wrapping done. Using these
