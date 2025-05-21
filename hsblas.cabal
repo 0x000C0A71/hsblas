@@ -74,7 +74,32 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
+flag OpenBLAS
+    description: Link with OpenBLAS. This overrules all other flags.
+    default: False
+    manual: True
 
+flag CBLAS
+    description: Link with `cblas` instead of `blas`
+    default: True
+    manual: True
+
+flag LAPACK
+    description: Link with `lapack`
+    default: False
+    manual: True
+
+flag LAPACKE
+    description: Link with `lapacke`
+    default: True
+    manual: True
+
+flag Accelerate
+    description:
+        Link with the Accelerate framework. This overrules all other
+        flags, but is ignored on non-darwin systems
+    default: True
+    manual: True
 
 
 common warnings
@@ -107,9 +132,25 @@ library
         base ^>=4.19.2.0,
         vector
 
-    extra-libraries:
-        cblas,
-        lapacke,
+    -- Native lib resolution is a pain, as every BLAS/LAPACK
+    -- implementation has their own way of linking to it
+    if flag(OpenBlas)
+        extra-libraries: openblas
+    else
+        if os(darwin) && flag(Accelerate)
+            frameworks: Accelerate
+        else
+            if flag(CBLAS)
+                extra-libraries: cblas
+            else
+                extra-libraries: blas
+
+            if flag(LAPACK)
+                extra-libraries: lapack
+
+            if flag(LAPACKE)
+                extra-libraries: lapacke
+
 
     -- Directories containing source files.
     hs-source-dirs:   src
