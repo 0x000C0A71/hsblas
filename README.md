@@ -20,7 +20,7 @@ specific. This mess is handeled in hsblas via cabal flags as follows:
 | `LAPACK`     | False   | `lapack`              | The LAPACK C API is exposed through `lapack`  |
 | `LAPACKE`    | True    | `lapacke`             | The LAPACK C API is exposed through `lapacke` |
 
-While being needlessly verbose, the following gives a complete overview of which
+While being needlessly verbose, the following table gives a complete overview of which
 libraries are searched and linked to:
 
 | `OpenBLAS` | `Accelerate` | `CBLAS` | `LAPACK` | `LAPACKE` | OS     | external libraries                    |
