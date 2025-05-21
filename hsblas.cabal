@@ -74,6 +74,16 @@ extra-doc-files:    CHANGELOG.md
 -- Extra source files to be distributed with the package, such as examples, or a tutorial module.
 -- extra-source-files:
 
+source-repository head
+  type:     git
+  location: https://github.com/0x000C0A71/hsblas
+
+-- TODO: fill in once tag is made
+--source-repository this
+--  type:     git
+--  location: https://github.com/0x000C0A71/hsblas
+--  tag:      0.1.0.0
+
 flag OpenBLAS
     description: Link with OpenBLAS. This overrules all other flags.
     default: False
@@ -129,8 +139,8 @@ library
 
     -- Other library packages from which modules are imported.
     build-depends:
-        base ^>=4.19.2.0,
-        vector
+        base >= 4.19.2 && < 4.20,
+        vector >= 0.13.2 && < 0.14,
 
     -- Native lib resolution is a pain, as every BLAS/LAPACK
     -- implementation has their own way of linking to it
@@ -182,8 +192,8 @@ test-suite hsblas-test
 
     -- Test dependencies.
     build-depends:
-        base ^>=4.19.2.0,
-        vector,
+        base >= 4.19.2 && < 4.20,
+        vector >= 0.13.2 && < 0.14,
         tasty,
         tasty-hunit,
-        hsblas
+        hsblas,
