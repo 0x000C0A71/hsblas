@@ -1,5 +1,21 @@
-# hsblas
 **Currently in heavy WIP**
+
+The number of wrapped/imported functions is **VERY LIMITED** at the moment,
+as this is mostly a dependency for one of my other projects, and as such,
+I don't need that much to work.
+
+This does not mean, that I have no interest/plans on making this more complete,
+this merely means, that it is not that high of a priority for me.
+
+Generating internal docs via haddock's `--haddock-internal` flag will document
+the `BLAS.Internal.Mutable`, `BLAS.Internal.Wrapped` & `BLAS.Internal.Pure`
+modules which have a note in their documentation on what my approach to wrapping
+is. Feel free to opena PR or issue for anything or everything.
+
+A full list of wrapped/supported functions is found [below](#list-of-wrapped-functions)
+
+# hsblas
+
 A wrapper around BLAS/LAPACK with the goal to provide everyone with the level of
 abstraction they want.
 
@@ -37,3 +53,8 @@ libraries are searched and linked to:
 | False      | False        | True    | True     | True      |        | `cblas`, `lapack`, `lapacke`          |
 
 where blank cells can be anything / are ignored
+
+# List of wrapped functions
+- `ddot`
+- `dgemm`
+- `dgesv`
