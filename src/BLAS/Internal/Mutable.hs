@@ -24,6 +24,7 @@ The intent is to allow each user to decide for themselves wether to import "BLAS
 -}
 module BLAS.Internal.Mutable
     ( gemm
+    , gesv
     ) where
 
 import BLAS.Internal.Utils
@@ -32,6 +33,9 @@ import qualified BLAS.Direct.Generic as D
 
 import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Storable.Mutable as VM
+
+-- TODO: Move from IO to some primitive state à la vectors
+
 
 -- | Computes the matrix \(C=\alpha AB+\beta C\) where:
 --
@@ -45,9 +49,9 @@ gemm
     => Layout                         -- ^ Whether the matrices are row-major or column-major
     -> Transpose                      -- ^ Whether to transpose the \(A\) matrix before processing
     -> Transpose                      -- ^ Whether to transpose the \(B\) matrix before processing
-    -> Int                            -- ^ The dimension \(\vec{n}\)
-    -> Int                            -- ^ The dimension \(\vec{m}\)
-    -> Int                            -- ^ The dimension \(\vec{k}\)
+    -> Int                            -- ^ The dimension \(n\)
+    -> Int                            -- ^ The dimension \(m\)
+    -> Int                            -- ^ The dimension \(k\)
     -> Int                            -- ^ The stride between lines in the vector in the \(A\) matrix
     -> Int                            -- ^ The stride between lines in the vector in the \(B\) matrix
     -> Int                            -- ^ The stride between lines in the vector in the \(C\) matrix
@@ -78,3 +82,73 @@ gemm l ta tb n m k lda ldb ldc alpha beta a b c = do
         n' = toCInt n
         m' = toCInt m
         k' = toCInt k
+
+
+-- | Solves \(AX=B\) for \(X\) where:
+--
+-- * \(A\in\texttt{a}^{n\times n}\)
+-- * \(X\in\texttt{a}^{n\times nrhs}\)
+-- * \(B\in\texttt{a}^{n\times nrhs}\)
+--
+-- The solve is performed via LU-Decomposition, where the matrix is decomposed into:
+--
+-- * \(P\): A permutation matrix
+-- * \(L\): A lower triangualar matrix
+-- * \(U\): An upper triangular matrix
+--
+-- such that \(PLU = A\)
+--
+-- \(A\) is replaced inplace with the \(L\) & \(U\) matrices, and the \(P\) matrix's pivot
+-- indices are returned as part of the return value. They are encoded as a
+-- 'Data.Vector.Storable.Vector' of `Int`s, that specifies for each row, with which row it
+-- was interchanged.
+--
+-- As a solve is not always possible, this operation can go either `Right`, or `Left`.
+-- A `Left` indicates that a solve is not possible. Even still, the factorisation into
+-- \(P\), \(L\) & \(U\) is still performed and returned/replaced inplace.
+gesv
+    :: D.Blasable a
+    => Layout -- ^ Whether the matrices are row-major or column-major
+    -> Int    -- ^ The dimension \(n\)
+    -> Int    -- ^ The dimension \(nrhs\)
+    -> Int    -- ^ The stride between lines in the vector in the \(A\) matrix
+    -> Int    -- ^ The stride between lines in the vector in the \(B\) matrix
+
+    -- | The components of matrix \(A\)
+    --
+    -- Gets overwritten with \(L\) & \(U\) where the unit diagonal of \(L\)
+    -- is not stored
+    -> VM.MVector (VM.PrimState IO) a
+
+    -- | The components of matrix \(B\)
+    --
+    -- Gets overwritten with the solved \(X\)
+    -> VM.MVector (VM.PrimState IO) a
+
+    -- | If the operation goes `Right`, returns the pivot indices,
+    -- if it goes `Left` (as a solve is impossible), returns the
+    -- pivot indices and the index along the diagonal of \(U\) at which
+    -- factorisation yielded a 0. In this case, \(P\), \(L\) & \(U\)
+    -- are still computed and returned in their respective manner.
+    -> IO (Either
+        (V.Vector Int, Int)
+        (V.Vector Int))
+gesv l n nrhs lda ldb a b = do
+    cipiv <- VM.unsafeNew n
+    info <- VM.unsafeWith a $ \pa ->
+        VM.unsafeWith b $ \pb ->
+            VM.unsafeWith cipiv $ \pipiv ->
+                D.gesv
+                    (layoutToInt l)
+                    (toCInt n)
+                    (toCInt nrhs)
+                    pa
+                    (toCInt lda)
+                    pipiv
+                    pb
+                    (toCInt ldb)
+    ipiv <- V.map fromCInt <$> V.unsafeFreeze cipiv
+    return $ case info `compare` 0 of
+        EQ -> Right ipiv
+        GT -> Left (ipiv, fromCInt info)
+        LT -> error "TODO: hsblas handle illegal arguments (`gesv`)"

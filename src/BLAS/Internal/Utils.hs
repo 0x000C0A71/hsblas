@@ -14,6 +14,9 @@ import BLAS.Types
 toCInt :: Int -> CInt
 toCInt = fromIntegral
 
+fromCInt :: CInt -> Int
+fromCInt = fromIntegral
+
 
 layoutToInt :: Layout -> CInt
 layoutToInt RowMajor = 101

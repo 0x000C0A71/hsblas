@@ -15,6 +15,7 @@ module BLAS
 
     -- * Immutable wrappers around mutable functions 
     , gemm
+    , gesv
 
     -- * Types
     , Layout(..)

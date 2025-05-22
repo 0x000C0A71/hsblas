@@ -157,7 +157,7 @@ class (Storable a, Fractional a) => Blasable a where
 
         -- | \(\verb|a *          b|\)
         --
-        -- Gets overwritten with the solved X
+        -- Gets overwritten with the solved \(X\)
         -> Ptr a
         -> CInt     -- ^ \(\verb|lapack_int   ldb|\)
         

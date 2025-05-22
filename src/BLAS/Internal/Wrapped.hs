@@ -23,6 +23,7 @@ The intent is to allow each user to decide for themselves wether to import "BLAS
 -}
 module BLAS.Internal.Wrapped
     ( gemm
+    , gesv
     ) where
 
 import BLAS.Internal.Utils
@@ -35,6 +36,8 @@ import qualified Data.Vector.Storable.Mutable as VM
 
 import System.IO.Unsafe
 
+-- TODO: Think about specifying inlining for these functions, as vector's `New`
+--       rewrite rules might need that to properly fire.
 
 -- | Computes the matrix \(C=\alpha AB\) where:
 --
@@ -65,3 +68,40 @@ gemm l ta tb n m k lda ldb alpha a b = unsafePerformIO $ do
             RowMajor -> m
             ColMajor -> n
 
+
+-- | Solves \(AX=B\) for \(X\) where:
+--
+-- * \(A\in\texttt{a}^{n\times n}\)
+-- * \(X\in\texttt{a}^{n\times nrhs}\)
+-- * \(B\in\texttt{a}^{n\times nrhs}\)
+--
+-- The solve is performed via LU-Decomposition, where the matrix is decomposed into:
+--
+-- * \(P\): A permutation matrix
+-- * \(L\): A lower triangualar matrix
+-- * \(U\): An upper triangular matrix
+--
+-- such that \(PLU = A\)
+--
+-- Unlike in this function's mutable sibling, \(P\), \(L\) & \(U\) are not returned
+gesv
+    :: D.Blasable a
+    => Layout     -- ^ Whether the matrices are row-major or column-major
+    -> Int        -- ^ The dimension \(n\)
+    -> Int        -- ^ The dimension \(nrhs\)
+    -> Int        -- ^ The stride between lines in the vector in the \(A\) matrix
+    -> Int        -- ^ The stride between lines in the vector in the \(B\) matrix
+    -> V.Vector a -- ^ The components of matrix \(A\)
+    -> V.Vector a -- ^ The components of matrix \(B\)
+
+    -- | The solved-for \(X\), if there is a solution
+    --
+    -- The matrix is stored with the same layout and stride as \(B\)
+    -> Maybe (V.Vector a)
+gesv l n lda ldb nrhs a b = unsafePerformIO $ do
+    mut_a <- V.thaw a
+    mut_b <- V.thaw b
+    result <- M.gesv l n nrhs lda ldb mut_a mut_b
+    case result of
+        Right _ -> Just <$> V.unsafeFreeze mut_b
+        Left  _ -> return Nothing

@@ -17,6 +17,7 @@ module BLAS.Mutable
 
     -- * Mutable functions
     , gemm
+    , gesv
 
     -- * Types
     , Layout(..)
